@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Random;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -19,7 +20,7 @@ public class GamblingAddiction {
     private static final double LOSING_BALANCE = 0;
 
     public static void main(String[] args) {
-        playSound("Jams/AceOfSpades.wav");
+        playSound("src/Jams/AceofSpades.wav");
         Scanner scanner = new Scanner(System.in);
 
         // Ask for the difficulty level
@@ -93,44 +94,32 @@ public class GamblingAddiction {
     }
 
     public static void displayGameOptions(Scanner scanner) {
-        System.out.println("What game would you like to play?");
-        System.out.println("1. Blackjack");
-        System.out.println("2. Poker");
-        System.out.println("3. Horse Race Betting");
-        System.out.println("4. Roulette");
-        System.out.println("5. Slots");
-        System.out.print("Enter your choice (1-5): ");
+        while (true) {
+            System.out.println("What game would you like to play?");
+            System.out.println("1. Blackjack");
+            System.out.println("2. Slots");
+            System.out.println("3. Roulette");
+            System.out.println("4. Info"); // New option to display game information
+            System.out.print("Enter your choice (1-4): ");
 
-        int gameChoice = scanner.nextInt();
-        switch (gameChoice) {
-            case 1:
-                playBlackjack(scanner);
-                break;
-            case 2:
-                //playPoker();
-                break;
-            case 3:
-                //playHorseRaceBetting();
-                break;
-            case 4:
-                //playRoulette();
-                break;
-            case 5:
-                //playSlots();
-                break;
-            default:
-                System.out.println("Invalid choice. Exiting the game.");
-        }
-    }
-
-    public static void playSound(String filePath) {
-        try {
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new File(filePath).getAbsoluteFile());
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioInputStream);
-            clip.start();
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
-            System.out.println("Error playing sound: " + e.getMessage());
+            int gameChoice = scanner.nextInt();
+            switch (gameChoice) {
+                case 1:
+                    playBlackjack(scanner);
+                    break;
+                case 2:
+                    playSlots(scanner);
+                    break;
+                case 3:
+                    playRoulette(scanner);
+                    break;
+                case 4:
+                    displayGameInfo(); // Call method to display game information
+                    break;
+                default:
+                    System.out.println("Invalid choice. Exiting the game.");
+                    return;
+            }
         }
     }
 
@@ -250,165 +239,408 @@ public class GamblingAddiction {
         }
     }
 
-    public static boolean attemptToLeaveTable(Scanner scanner) {
-        System.out.println("Are you sure you want to leave the table? (yes/no)");
-        String leaveDecision = scanner.next();
-        return leaveDecision.equalsIgnoreCase("yes");
+    public static void playSlots(Scanner scanner) {
+        final String[] symbols = {"Cherry", "Lemon", "Orange", "Plum", "Bell", "Bar"};
+        final int[] betOptions = {100, 1000, 2500};
+
+        System.out.println("Welcome to Slots!");
+        System.out.println("Bet options: $100, $1000, $2500");
+        System.out.println("Payouts:");
+        System.out.println("Cherry - 10x");
+        System.out.println("Lemon  - 20x");
+        System.out.println("Orange - 30x");
+        System.out.println("Plum   - 40x");
+        System.out.println("Bell   - 50x");
+        System.out.println("Bar    - 100x");
+        System.out.println("Your starting balance: $" + startingBalance);
+
+        while (true) {
+            // Select bet amount
+            int betIndex;
+            while (true) {
+                System.out.println("Select your bet amount:");
+                System.out.println("1. $100");
+                System.out.println("2. $1000");
+                System.out.println("3. $2500");
+                betIndex = scanner.nextInt();
+                if (betIndex >= 1 && betIndex <= 3) {
+                    break;
+                } else {
+                    System.out.println("Invalid option. Please select 1, 2, or 3.");
+                }
+            }
+            int bet = betOptions[betIndex - 1];
+
+            // Check if player has enough balance for the selected bet
+            if (startingBalance < bet) {
+                System.out.println("You don't have enough balance to bet $" + bet + ". Please choose another option.");
+                continue;
+            }
+
+            startingBalance -= bet;
+
+            // Spin the slots
+            String[] result = new String[3];
+            for (int i = 0; i < 3; i++) {
+                result[i] = symbols[new Random().nextInt(symbols.length)];
+            }
+
+            System.out.println("Spinning...");
+            try {
+                Thread.sleep(2000); // Simulate spinning time
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("Result: " + String.join(" | ", result));
+
+            // Calculate payout
+            int payoutMultiplier = 0;
+            for (String symbol : symbols) {
+                int count = 0;
+                for (String slot : result) {
+                    if (symbol.equals(slot)) {
+                        count++;
+                    }
+                }
+                if (count >= 2) { // At least 2 of the same symbol
+                    payoutMultiplier += count == 3 ? 3 : 2; // 3 of the same symbol get a slightly higher payout
+                }
+            }
+
+            int payout = bet * payoutMultiplier;
+            startingBalance += payout;
+
+            System.out.println("Payout: $" + payout);
+            System.out.println("Your new balance: $" + startingBalance);
+
+            if (checkLossCondition(scanner)) {
+                break; // Break out of the current game loop and return to game selection
+            }
+
+            if (checkWinCondition(scanner)) {
+                break; // Break out of the current game loop and return to game selection
+            }
+        }
+    }
+
+    public static void playRoulette(Scanner scanner) {
+        final int minBet = 100;
+        final int maxBet = 5000;
+
+        System.out.println("Welcome to Roulette!");
+        System.out.println("Minimum bet: $" + minBet);
+        System.out.println("Maximum bet: $" + maxBet);
+        System.out.println("Your starting balance: $" + startingBalance);
+
+        while (true) {
+            // Get the type of bet from the player
+            int betType;
+            while (true) {
+                System.out.println("Select the type of bet:");
+                System.out.println("1. Single Number");
+                System.out.println("2. Combination of Numbers");
+                System.out.println("3. Odd/Even");
+                System.out.println("4. Black/Red");
+                betType = scanner.nextInt();
+                if (betType >= 1 && betType <= 4) {
+                    break;
+                } else {
+                    System.out.println("Invalid option. Please select 1, 2, 3, or 4.");
+                }
+            }
+
+            int betAmount;
+            while (true) {
+                System.out.print("Enter your bet amount (between $" + minBet + " and $" + maxBet + "): $");
+                betAmount = scanner.nextInt();
+                if (betAmount >= minBet && betAmount <= maxBet && betAmount <= startingBalance) {
+                    break;
+                } else {
+                    System.out.println("Invalid bet amount. Please enter an amount between $" + minBet + " and $" + maxBet + " and make sure you have enough balance.");
+                }
+            }
+
+            // Update balance
+            startingBalance -= betAmount;
+
+            switch (betType) {
+                case 1:
+                    playSingleNumberBet(scanner, betAmount);
+                    break;
+                case 2:
+                    playCombinationBet(scanner, betAmount);
+                    break;
+                case 3:
+                    playOddEvenBet(scanner, betAmount);
+                    break;
+                case 4:
+                    playColorBet(scanner, betAmount);
+                    break;
+            }
+
+            // Check if the player has run out of money or reached the winning balance
+            if (checkLossCondition(scanner) || checkWinCondition(scanner)) {
+                break;
+            }
+        }
+    }
+
+    public static void playSingleNumberBet(Scanner scanner, int betAmount) {
+        System.out.print("Enter the number you want to bet on (0-36): ");
+        int chosenNumber = scanner.nextInt();
+        int rouletteResult = spinRouletteWheel();
+
+        System.out.println("Roulette result: " + rouletteResult);
+
+        if (chosenNumber == rouletteResult) {
+            int payout = betAmount * 35;
+            startingBalance += payout;
+            System.out.println("Congratulations! You win $" + payout);
+        } else {
+            System.out.println("Sorry, you lose!");
+        }
+    }
+
+    public static void playCombinationBet(Scanner scanner, int betAmount) {
+        System.out.print("Enter the numbers you want to bet on (separated by spaces): ");
+        scanner.nextLine(); // Consume newline
+        String[] chosenNumbersStr = scanner.nextLine().split(" ");
+        int[] chosenNumbers = new int[chosenNumbersStr.length];
+        for (int i = 0; i < chosenNumbersStr.length; i++) {
+            chosenNumbers[i] = Integer.parseInt(chosenNumbersStr[i]);
+        }
+        int rouletteResult = spinRouletteWheel();
+
+        System.out.println("Roulette result: " + rouletteResult);
+
+        for (int number : chosenNumbers) {
+            if (number == rouletteResult) {
+                int payout = betAmount * 35 / chosenNumbers.length;
+                startingBalance += payout;
+                System.out.println("Congratulations! You win $" + payout + " on number " + number);
+                return;
+            }
+        }
+        System.out.println("Sorry, you lose!");
+    }
+
+    public static void playOddEvenBet(Scanner scanner, int betAmount) {
+        System.out.print("Do you want to bet on (1) Odd or (2) Even: ");
+        int choice = scanner.nextInt();
+        int rouletteResult = spinRouletteWheel();
+
+        System.out.println("Roulette result: " + rouletteResult);
+
+        if ((choice == 1 && rouletteResult % 2 != 0) || (choice == 2 && rouletteResult % 2 == 0)) {
+            int payout = betAmount * 2;
+            startingBalance += payout;
+            System.out.println("Congratulations! You win $" + payout);
+        } else {
+            System.out.println("Sorry, you lose!");
+        }
+    }
+
+    public static void playColorBet(Scanner scanner, int betAmount) {
+        System.out.print("Do you want to bet on (1) Red or (2) Black: ");
+        int choice = scanner.nextInt();
+        int rouletteResult = spinRouletteWheel();
+
+        System.out.println("Roulette result: " + rouletteResult);
+
+        if ((choice == 1 && isRed(rouletteResult)) || (choice == 2 && !isRed(rouletteResult))) {
+            int payout = betAmount * 2;
+            startingBalance += payout;
+            System.out.println("Congratulations! You win $" + payout);
+        } else {
+            System.out.println("Sorry, you lose!");
+        }
+    }
+
+    public static int spinRouletteWheel() {
+        // Get a random number between 0 and 36 for the roulette result
+        return new Random().nextInt(37);
+    }
+
+    public static boolean isRed(int number) {
+        return (number >= 1 && number <= 10) || (number >= 19 && number <= 28);
+    }
+
+
+    public static boolean checkLossCondition(Scanner scanner) {
+        if (startingBalance <= LOSING_BALANCE) {
+            System.out.println("You've run out of money! Game over.");
+            displayGameOptions(scanner);
+            return true;
+        }
+        return false;
     }
 
     public static boolean checkWinCondition(Scanner scanner) {
         if (startingBalance >= WINNING_BALANCE) {
-            System.out.println("Congratulations! You have reached a balance of $1,000,000 and won the game!");
-
-            System.out.println("Would you like to walk away with your money? (yes/no)");
-            String decision = scanner.next();
-            if (decision.equalsIgnoreCase("yes")) {
-                System.out.println("You decide to walk away with your winnings. You feel the weight of the money in your pocket as you step out of the casino, knowing that you've secured your future.");
-                System.out.println("You are now back at the beginning. Type 'end' to exit the game.");
-                String endGame = scanner.next();
-                return true;
-            } else {
-                System.out.println("You decide to continue playing.");
-                return false;
-            }
+            System.out.println("Congratulations! You've reached your goal of $1,000,000! You win!");
+            displayGameOptions(scanner);
+            return true;
         }
         return false;
     }
 
-    public static boolean checkLossCondition(Scanner scanner) {
-        if (startingBalance <= LOSING_BALANCE) {
-            System.out.println("You have lost all your money and reached a balance of $0. Game over.");
-            System.out.println("Would you like to walk away with your remaining balance? (yes/no)");
-            String decision = scanner.next();
-            if (decision.equalsIgnoreCase("yes")) {
-                System.out.println("You decide to walk away with your remaining balance. You leave the casino with a heavy heart, wondering what went wrong.");
-                System.out.println("You are now back at the beginning. Type 'end' to exit the game.");
-                String endGame = scanner.next();
-                return true;
-            } else {
-                System.out.println("You decide to continue playing.");
-                return false;
-            }
-        }
-        return false;
+    public static boolean attemptToLeaveTable(Scanner scanner) {
+        System.out.println("Do you want to leave the table? (yes/no)");
+        String leaveChoice = scanner.next();
+        return leaveChoice.equalsIgnoreCase("yes");
     }
 
-    static class Deck {
-        private List<Card> cards;
+    public static void displayGameInfo() {
+        System.out.println("Game Information:");
+        System.out.println("Blackjack:");
+        System.out.println("- Rules: Try to get as close to 21 as possible without going over. Beat the dealer's hand to win.");
+        System.out.println("- Number of decks: " + numDecks);
+        System.out.println("- Payout ratio: " + payoutRatio);
+        System.out.println();
+        System.out.println("Slots:");
+        System.out.println("- Rules: Spin the slots and match symbols to win payouts.");
+        System.out.println("- Cost per spin: $100");
+        System.out.println("- Payouts:");
+        System.out.println("  - Cherry - 10x");
+        System.out.println("  - Lemon  - 20x");
+        System.out.println("  - Orange - 30x");
+        System.out.println("  - Plum   - 40x");
+        System.out.println("  - Bell   - 50x");
+        System.out.println("  - Bar    - 100x");
+        System.out.println();
+        System.out.println("Roulette:");
+        System.out.println("- Rules: Bet on the outcome of a spinning roulette wheel.");
+        System.out.println("- Bet options: Odd/Even");
+        System.out.println("- Minimum bet: $100");
+        System.out.println("- Maximum bet: $5000");
+        System.out.println();
+    }
+
+    public static void playSound(String soundFilePath) {
+        File soundFile = new File(soundFilePath);
+        try {
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioIn);
+            clip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class Card {
+    private final String suit;
+    private final String rank;
+
+    public Card(String suit, String rank) {
+        this.suit = suit;
+        this.rank = rank;
+    }
+
+    public String getSuit() {
+        return suit;
+    }
+
+    public String getRank() {
+        return rank;
+    }
+
+    public int getValue() {
+        switch (rank) {
+            case "Ace":
+                return 11;
+            case "King":
+            case "Queen":
+            case "Jack":
+            case "10":
+                return 10;
+            default:
+                return Integer.parseInt(rank);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return rank + " of " + suit;
+    }
+}
+
+class Hand {
+    private final List<Card> cards;
+
+    public Hand() {
+        cards = new ArrayList<>();
+    }
+
+    public void addCard(Card card) {
+        cards.add(card);
+    }
+
+    public int getHandValue() {
+        int value = 0;
+        int numAces = 0;
+
+        for (Card card : cards) {
+            value += card.getValue();
+            if (card.getValue() == 11) {
+                numAces++;
+            }
+        }
+
+        while (value > 21 && numAces > 0) {
+            value -= 10;
+            numAces--;
+        }
+
+        return value;
+    }
+
+    public Card getCard(int index) {
+        if (index < 0 || index >= cards.size()) {
+            throw new IndexOutOfBoundsException("Index is out of bounds");
+        }
+        return cards.get(index);
+    }
+
+    public Card getLastCard() {
+        return cards.get(cards.size() - 1);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder handString = new StringBuilder();
+        for (Card card : cards) {
+            handString.append(card.toString()).append(", ");
+        }
+        return handString.substring(0, handString.length() - 2); // Remove the last comma and space
+    }
+}
 
 
-        public Deck(int numDecks) {
-            this.cards = new ArrayList<>();
-            for (int i = 0; i < numDecks; i++) {
-                for (Suit suit : Suit.values()) {
-                    for (Rank rank : Rank.values()) {
-                        this.cards.add(new Card(rank, suit));
-                    }
+class Deck {
+    private final List<Card> cards;
+
+    public Deck(int numDecks) {
+        cards = new ArrayList<>();
+        String[] suits = {"Hearts", "Diamonds", "Clubs", "Spades"};
+        String[] ranks = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"};
+
+        for (int i = 0; i < numDecks; i++) {
+            for (String suit : suits) {
+                for (String rank : ranks) {
+                    cards.add(new Card(suit, rank));
                 }
             }
         }
-
-        public void shuffle() {
-            Collections.shuffle(this.cards);
-        }
-
-        public Card drawCard() {
-            if (!this.cards.isEmpty()) {
-                return this.cards.remove(0);
-            } else {
-                System.out.println("The deck is empty.");
-                return null;
-            }
-        }
     }
 
-    static class Hand {
-        private List<Card> cards;
-
-        public Hand() {
-            this.cards = new ArrayList<>();
-        }
-
-        public void addCard(Card card) {
-            this.cards.add(card);
-        }
-
-        public Card getCard(int index) {
-            return this.cards.get(index);
-        }
-
-        public int getHandValue() {
-            int value = 0;
-            int aceCount = 0;
-            for (Card card : this.cards) {
-                if (card.getRank() == Rank.ACE) {
-                    aceCount++;
-                }
-                value += card.getValue();
-            }
-            while (value > 21 && aceCount > 0) {
-                value -= 10;
-                aceCount--;
-            }
-            return value;
-        }
-
-        public Card getLastCard() {
-            return this.cards.get(this.cards.size() - 1);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            for (Card card : this.cards) {
-                sb.append(card.toString()).append(" ");
-            }
-            return sb.toString();
-        }
+    public void shuffle() {
+        Collections.shuffle(cards);
     }
 
-    enum Suit {
-        SPADES, HEARTS, DIAMONDS, CLUBS
-    }
-
-    enum Rank {
-        TWO(2), THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8), NINE(9), TEN(10), JACK(10), QUEEN(10), KING(10), ACE(11);
-
-        private final int value;
-
-        Rank(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
-
-    static class Card {
-        private final Rank rank;
-        private final Suit suit;
-
-        public Card(Rank rank, Suit suit) {
-            this.rank = rank;
-            this.suit = suit;
-        }
-
-        public Rank getRank() {
-            return rank;
-        }
-
-        public Suit getSuit() {
-            return suit;
-        }
-
-        public int getValue() {
-            return rank.getValue();
-        }
-
-        @Override
-        public String toString() {
-            return rank + " of " + suit;
-        }
+    public Card drawCard() {
+        return cards.remove(cards.size() - 1);
     }
 }
