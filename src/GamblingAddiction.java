@@ -14,24 +14,41 @@ import java.io.IOException;
 public class GamblingAddiction {
     private static double startingBalance = 0;
     private static double leaveProbability;
-    private static int numDecks; // Variable to store the number of decks based on difficulty
-    private static double payoutRatio; // Variable to store the payout ratio based on difficulty
+    private static int numDecks;
+    private static double payoutRatio;
     private static final double WINNING_BALANCE = 1_000_000;
     private static final double LOSING_BALANCE = 0;
+    private static int consecutiveMaxBets = 0;
+    private static double addiction = 0;
 
     public static void main(String[] args) {
         playSound("src/Jams/AceofSpades.wav");
         Scanner scanner = new Scanner(System.in);
 
-        // Ask for the difficulty level
-        int difficultyChoice = askForDifficulty(scanner);
+        while (true) {
+            int difficultyChoice = askForDifficulty(scanner);
+            setGameParameters(difficultyChoice);
+            displayGameOptions(scanner, difficultyChoice);
 
-        // Set the game parameters based on difficulty
-        setGameParameters(difficultyChoice);
+            if (checkLossCondition(scanner, difficultyChoice)) {
+                System.out.println("Do you want to play again? (1 for Yes, 2 for No)");
+                int playAgainChoice = scanner.nextInt();
+                if (playAgainChoice != 1) {
+                    System.out.println("Thank you for playing!");
+                    break;
+                }
+                continue;
+            }
 
-        // Display game options
-        displayGameOptions(scanner);
+            System.out.println("Do you want to play again? (1 for Yes, 2 for No)");
+            int playAgainChoice = scanner.nextInt();
+            if (playAgainChoice != 1) {
+                System.out.println("Thank you for playing!");
+                break;
+            }
+        }
     }
+
 
     public static int askForDifficulty(Scanner scanner) {
         System.out.println("Welcome to the Gambling Addiction Simulator, please select the difficulty level:");
@@ -54,7 +71,7 @@ public class GamblingAddiction {
                 difficulty = "Blackjack Beginner";
                 story = "Here you are in Vegas, a 21 year old generic looking white man here with some friends and about $10,000 of daddy's money in your wallet to play with. You haven't dabbled in the world of gambling before this but what better time to start than now. After all, Papa said he wouldn't allow you any of the family fortune when he dies unless you can prove your success by making a million dollars before his passing and his cancer isn't getting any better...";
                 startingBalance = 100000;
-                leaveProbability = 0.8; // Higher probability to leave
+                leaveProbability = 0.8;
                 break;
             case 2:
                 numDecks = 6;
@@ -78,7 +95,7 @@ public class GamblingAddiction {
                 difficulty = "Monte Carlo Crackhead";
                 story = "Yeah, you're just kinda fucked. I mean, I'm really not sure you can get out of this one and I don't know how you're even still alive. You're in so much debt with the the Société des Bains de Mer (the owners of the Casino de Monte Carlo) and Crown Resorts Limited (the owners of most casinos in Australia) that you've had to sell one of your eyes, a kidney, a lung, part of your liver, and both testicles. On top of that, Australia's The Honoured Society crime family, Serbian mafia, and Albanian mafia are all after you because you ran out on their loans. This is pretty much it, you've got no possible chance to pay them back even if you were the richest man in the world, the only thing you can do now is run and run far. Tahiti is where you're headed, to become a rancher and mango farmer, but to run and make a new life will take money, and years of experience at the tables and knowledge of the highest payouts means gambling is your only chance...";
                 startingBalance = 1000;
-                leaveProbability = 0.2; // Lowest probability to leave
+                leaveProbability = 0.2;
                 break;
             default:
                 System.out.println("Invalid choice. Setting to medium difficulty.");
@@ -87,34 +104,34 @@ public class GamblingAddiction {
                 difficulty = "Medium";
                 story = "You've chosen a moderate level of difficulty. The casino floor stretches out before you, beckoning with promises of excitement and fortune. What game will you choose?";
                 startingBalance = 7500;
-                leaveProbability = 0.5; // Default medium probability to leave
+                leaveProbability = 0.5;
         }
         System.out.println("You've chosen the difficulty level: " + difficulty);
         System.out.println(story);
     }
 
-    public static void displayGameOptions(Scanner scanner) {
+    public static void displayGameOptions(Scanner scanner, int difficultyChoice) {
         while (true) {
             System.out.println("What game would you like to play?");
             System.out.println("1. Blackjack");
             System.out.println("2. Slots");
             System.out.println("3. Roulette");
-            System.out.println("4. Info"); // New option to display game information
+            System.out.println("4. Info");
             System.out.print("Enter your choice (1-4): ");
 
             int gameChoice = scanner.nextInt();
             switch (gameChoice) {
                 case 1:
-                    playBlackjack(scanner);
+                    playBlackjack(scanner, difficultyChoice);
                     break;
                 case 2:
-                    playSlots(scanner);
+                    playSlots(scanner, difficultyChoice);
                     break;
                 case 3:
-                    playRoulette(scanner);
+                    playRoulette(scanner, difficultyChoice);
                     break;
                 case 4:
-                    displayGameInfo(); // Call method to display game information
+                    displayGameInfo();
                     break;
                 default:
                     System.out.println("Invalid choice. Exiting the game.");
@@ -123,14 +140,14 @@ public class GamblingAddiction {
         }
     }
 
-    public static void playBlackjack(Scanner scanner) {
+    public static void playBlackjack(Scanner scanner, int difficultyChoice) {
         final int maxBet = 5000;
 
         System.out.println("Playing Blackjack...");
         System.out.println("Your starting balance: $" + startingBalance);
 
-        while (true) { // Loop to play multiple hands
-            while (true) { // Loop to play multiple hands until the user decides to leave the table
+        while (true) {
+            while (true) {
                 System.out.print("Enter your bet amount (max bet: $" + maxBet + "): $");
                 int bet = scanner.nextInt();
 
@@ -142,8 +159,9 @@ public class GamblingAddiction {
                 System.out.println("You've placed a bet of $" + bet);
 
                 startingBalance -= bet;
+                addiction += 0.1;
 
-                Deck deck = new Deck(numDecks); // Using the number of decks based on difficulty
+                Deck deck = new Deck(numDecks);
                 deck.shuffle();
 
                 Hand playerHand = new Hand();
@@ -156,7 +174,6 @@ public class GamblingAddiction {
                 System.out.println("Your hand: " + playerHand.toString());
                 System.out.println("Dealer's hand: " + dealerHand.getCard(0).toString() + " [Hidden]");
 
-                // Player's turn
                 while (true) {
                     System.out.println("Your current hand total: " + playerHand.getHandValue());
 
@@ -167,7 +184,6 @@ public class GamblingAddiction {
                         System.out.println("You draw: " + playerHand.getLastCard().toString());
                         if (playerHand.getHandValue() > 21) {
                             System.out.println("Bust! You lose!");
-                            // Dealer wins if player busts
                             break;
                         }
                     } else if (choice == 2) {
@@ -182,13 +198,12 @@ public class GamblingAddiction {
                         playerHand.addCard(deck.drawCard());
                         System.out.println("You double down and draw: " + playerHand.getLastCard().toString());
                         System.out.println("Your hand: " + playerHand.toString());
-                        break; // No more actions allowed after doubling down
+                        break;
                     } else {
                         System.out.println("Invalid choice. Please choose (1) Hit, (2) Stay, or (3) Double Down.");
                     }
                 }
 
-                // Dealer's turn
                 if (playerHand.getHandValue() <= 21) {
                     System.out.println("Dealer's hand: " + dealerHand.toString());
 
@@ -204,10 +219,10 @@ public class GamblingAddiction {
 
                     if (dealerValue > 21 || playerValue > dealerValue) {
                         System.out.println("You win!");
-                        startingBalance += bet * payoutRatio; // Use the payoutRatio variable here
+                        startingBalance += bet * payoutRatio;
                     } else if (playerValue == dealerValue) {
                         System.out.println("Push! It's a tie!");
-                        startingBalance += bet; // Return the bet to the player
+                        startingBalance += bet;
                     } else {
                         System.out.println("Dealer wins!");
                     }
@@ -215,12 +230,12 @@ public class GamblingAddiction {
 
                 System.out.println("Your new balance: $" + startingBalance);
 
-                if (checkLossCondition(scanner)) {
-                    break; // Break out of the current game loop and return to game selection
+                if (checkLossCondition(scanner, difficultyChoice)) {
+                    break;
                 }
 
-                if (checkWinCondition(scanner)) {
-                    break; // Break out of the current game loop and return to game selection
+                if (checkWinCondition(scanner, difficultyChoice)) {
+                    break;
                 }
 
                 System.out.println("Do you want to play another hand? (yes/no)");
@@ -228,18 +243,17 @@ public class GamblingAddiction {
                 if (playAgain.equalsIgnoreCase("no")) {
                     if (attemptToLeaveTable(scanner)) {
                         System.out.println("You successfully left the table.");
-                        displayGameOptions(scanner);
-                        break; // Break out of the current game loop and return to game selection
+                        displayGameOptions(scanner, difficultyChoice);
+                        break;
                     } else {
                         System.out.println("You decided to stay at the table.");
-                        // Continue with the current game loop
                     }
                 }
             }
         }
     }
 
-    public static void playSlots(Scanner scanner) {
+    public static void playSlots(Scanner scanner, int difficultyChoice) {
         final String[] symbols = {"Cherry", "Lemon", "Orange", "Plum", "Bell", "Bar"};
         final int[] betOptions = {100, 1000, 2500};
 
@@ -255,7 +269,6 @@ public class GamblingAddiction {
         System.out.println("Your starting balance: $" + startingBalance);
 
         while (true) {
-            // Select bet amount
             int betIndex;
             while (true) {
                 System.out.println("Select your bet amount:");
@@ -271,15 +284,14 @@ public class GamblingAddiction {
             }
             int bet = betOptions[betIndex - 1];
 
-            // Check if player has enough balance for the selected bet
             if (startingBalance < bet) {
                 System.out.println("You don't have enough balance to bet $" + bet + ". Please choose another option.");
                 continue;
             }
 
             startingBalance -= bet;
+            addiction += 0.1;
 
-            // Spin the slots
             String[] result = new String[3];
             for (int i = 0; i < 3; i++) {
                 result[i] = symbols[new Random().nextInt(symbols.length)];
@@ -287,14 +299,14 @@ public class GamblingAddiction {
 
             System.out.println("Spinning...");
             try {
-                Thread.sleep(2000); // Simulate spinning time
+                Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
+
             System.out.println("Result: " + String.join(" | ", result));
 
-            // Calculate payout
             int payoutMultiplier = 0;
             for (String symbol : symbols) {
                 int count = 0;
@@ -303,28 +315,29 @@ public class GamblingAddiction {
                         count++;
                     }
                 }
-                if (count >= 2) { // At least 2 of the same symbol
-                    payoutMultiplier += count == 3 ? 3 : 2; // 3 of the same symbol get a slightly higher payout
+                if (count >= 2) {
+                    payoutMultiplier += count == 3 ? 3 : 2;
                 }
             }
 
             int payout = bet * payoutMultiplier;
             startingBalance += payout;
 
+
             System.out.println("Payout: $" + payout);
             System.out.println("Your new balance: $" + startingBalance);
 
-            if (checkLossCondition(scanner)) {
-                break; // Break out of the current game loop and return to game selection
+            if (checkLossCondition(scanner, difficultyChoice)) {
+                break;
             }
 
-            if (checkWinCondition(scanner)) {
-                break; // Break out of the current game loop and return to game selection
+            if (checkWinCondition(scanner, difficultyChoice)) {
+                break;
             }
         }
     }
 
-    public static void playRoulette(Scanner scanner) {
+    public static void playRoulette(Scanner scanner, int difficultyChoice) {
         final int minBet = 100;
         final int maxBet = 5000;
 
@@ -334,7 +347,6 @@ public class GamblingAddiction {
         System.out.println("Your starting balance: $" + startingBalance);
 
         while (true) {
-            // Get the type of bet from the player
             int betType;
             while (true) {
                 System.out.println("Select the type of bet:");
@@ -342,11 +354,23 @@ public class GamblingAddiction {
                 System.out.println("2. Combination of Numbers");
                 System.out.println("3. Odd/Even");
                 System.out.println("4. Black/Red");
+                System.out.println("5. Leave the table"); // Added option to leave
                 betType = scanner.nextInt();
-                if (betType >= 1 && betType <= 4) {
+                if (betType >= 1 && betType <= 5) { // Updated condition to accommodate leaving
                     break;
                 } else {
-                    System.out.println("Invalid option. Please select 1, 2, 3, or 4.");
+                    System.out.println("Invalid option. Please select 1, 2, 3, 4, or 5.");
+                }
+            }
+
+            if (betType == 5) { // Check if the player chose to leave
+                if (attemptToLeaveTable(scanner)) {
+                    System.out.println("You successfully left the roulette table.");
+                    displayGameOptions(scanner, difficultyChoice);
+                    return; // Return to the main game menu
+                } else {
+                    System.out.println("You decided to stay at the roulette table.");
+                    continue; // Continue playing roulette
                 }
             }
 
@@ -361,8 +385,8 @@ public class GamblingAddiction {
                 }
             }
 
-            // Update balance
             startingBalance -= betAmount;
+            addiction += 0.1;
 
             switch (betType) {
                 case 1:
@@ -379,12 +403,12 @@ public class GamblingAddiction {
                     break;
             }
 
-            // Check if the player has run out of money or reached the winning balance
-            if (checkLossCondition(scanner) || checkWinCondition(scanner)) {
+            if (checkLossCondition(scanner, difficultyChoice) || checkWinCondition(scanner, difficultyChoice)) {
                 break;
             }
         }
     }
+
 
     public static void playSingleNumberBet(Scanner scanner, int betAmount) {
         System.out.print("Enter the number you want to bet on (0-36): ");
@@ -404,7 +428,7 @@ public class GamblingAddiction {
 
     public static void playCombinationBet(Scanner scanner, int betAmount) {
         System.out.print("Enter the numbers you want to bet on (separated by spaces): ");
-        scanner.nextLine(); // Consume newline
+        scanner.nextLine();
         String[] chosenNumbersStr = scanner.nextLine().split(" ");
         int[] chosenNumbers = new int[chosenNumbersStr.length];
         for (int i = 0; i < chosenNumbersStr.length; i++) {
@@ -458,7 +482,6 @@ public class GamblingAddiction {
     }
 
     public static int spinRouletteWheel() {
-        // Get a random number between 0 and 36 for the roulette result
         return new Random().nextInt(37);
     }
 
@@ -466,29 +489,68 @@ public class GamblingAddiction {
         return (number >= 1 && number <= 10) || (number >= 19 && number <= 28);
     }
 
-
-    public static boolean checkLossCondition(Scanner scanner) {
+    public static boolean checkLossCondition(Scanner scanner, int difficultyChoice) {
         if (startingBalance <= LOSING_BALANCE) {
-            System.out.println("You've run out of money! Game over.");
-            displayGameOptions(scanner);
+            switch (difficultyChoice) {
+                case 1:
+                    System.out.println("You've run out of money! Your father's inheritance is lost, and you've failed to prove yourself.");
+                    break;
+                case 2:
+                    System.out.println("You've hit rock bottom, old-timer. It's time to accept that the slots have taken everything from you.");
+                    break;
+                case 3:
+                    System.out.println("The casino has drained you dry, leaving you with nothing but debt and regrets. There's no way out now.");
+                    break;
+                case 4:
+                    System.out.println("Your luck has run out, and so has your life. The debts you've accumulated have finally caught up with you.");
+                    break;
+                default:
+                    System.out.println("You've run out of money! Game over.");
+            }
+            return true;
+        }
+        // Check if addiction surpasses leaveProbability
+        else if (addiction >= leaveProbability) {
+            System.out.println("Your gambling addiction has consumed you completely. Game over.");
+            return true;
+        }
+        if (attemptToLeaveTable(scanner)) {
+            System.out.println("You've become too addicted to leave the table. Your gambling addiction has consumed you.");
             return true;
         }
         return false;
     }
 
-    public static boolean checkWinCondition(Scanner scanner) {
+
+    public static boolean checkWinCondition(Scanner scanner, int difficultyChoice) {
         if (startingBalance >= WINNING_BALANCE) {
-            System.out.println("Congratulations! You've reached your goal of $1,000,000! You win!");
-            displayGameOptions(scanner);
+            switch (difficultyChoice) {
+                case 1:
+                    System.out.println("Congratulations! You've reached your goal of $1,000,000! Your father is proud, and you've proven yourself worthy of the family fortune.");
+                    break;
+                case 2:
+                    System.out.println("You've hit the jackpot, old-timer! A million dollars richer, you've proven that even the humblest of slot scoundrels can strike it big.");
+                    break;
+                case 3:
+                    System.out.println("The casino's coffers are yours, and you've risen from the ranks of the downtrodden to claim your prize. A million dollars richer, you walk away, leaving behind your debts and regrets.");
+                    break;
+                case 4:
+                    System.out.println("Unbelievable! Against all odds, you've made it. With a million dollars in your pocket, you can leave your troubles behind and start anew.");
+                    break;
+                default:
+                    System.out.println("Congratulations! You've reached your goal of $1,000,000! You win!");
+            }
+            displayGameOptions(scanner, difficultyChoice);
             return true;
         }
         return false;
     }
 
     public static boolean attemptToLeaveTable(Scanner scanner) {
-        System.out.println("Do you want to leave the table? (yes/no)");
-        String leaveChoice = scanner.next();
-        return leaveChoice.equalsIgnoreCase("yes");
+        double leaveProbabilityWithAddiction = leaveProbability - addiction; // Adjusted leave probability with addiction
+        System.out.println("Current leave probability: " + leaveProbabilityWithAddiction);
+        Random random = new Random();
+        return random.nextDouble() > leaveProbabilityWithAddiction;
     }
 
     public static void displayGameInfo() {
@@ -614,10 +676,9 @@ class Hand {
         for (Card card : cards) {
             handString.append(card.toString()).append(", ");
         }
-        return handString.substring(0, handString.length() - 2); // Remove the last comma and space
+        return handString.substring(0, handString.length() - 2);
     }
 }
-
 
 class Deck {
     private final List<Card> cards;
@@ -643,4 +704,5 @@ class Deck {
     public Card drawCard() {
         return cards.remove(cards.size() - 1);
     }
+
 }
